@@ -5,6 +5,7 @@ import datetime
 import time
 
 from haar_cascade_face_detector import HaarCascadeFaceDetector
+from fuzzy_logic_controller import FuzzyLogicController
 
 
 class Tello():
@@ -29,6 +30,10 @@ class Tello():
         self.haar_face_detector = HaarCascadeFaceDetector()
         self.frame = None
         self.face_rect = None
+
+        # Movement control
+        self.fl_controller = FuzzyLogicController()
+        self.x_treshold = 30
 
         # Threads
         self._comm_handle_running = True
@@ -139,11 +144,13 @@ class Tello():
         print("frame_center_x: {}, face_center_x: {}, center_diff: {}".format(frame_center_x, face_center_x, center_diff))
 
         if abs(center_diff) >= threshold:
+            turn_degrees = self.fl_controller.calculate_x(abs(center_diff))
             if center_diff > 0:
-                direction = "left"
+                direction = "ccw"
             else:
-                direction = "right"
-            self.send_command(direction+" 40")
+                direction = "cw"
+            self.send_command("{} {}".format(direction, turn_degrees))
+        self.face_rect = None
 
 
 if __name__ == "__main__":
