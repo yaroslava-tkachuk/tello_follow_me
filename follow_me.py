@@ -33,7 +33,11 @@ class Tello():
 
         # Movement control
         self.fl_controller = FuzzyLogicController()
-        self.x_treshold = 30
+        self.x_threshold = 30 # 30 px = 5 deg
+        self.z_threshold = 76 # 76 px > 20 cm
+        self.y_threshold = 28 # 28 > 20 cm
+        self.target_face_area = 2500 # approx distance = 80 cm
+        self.command_queue = []
 
         # Threads
         self._comm_handle_running = True
@@ -57,6 +61,9 @@ class Tello():
         self.send_command("takeoff")
         self.wait_for_response()
 
+        self.send_command("up 60")
+        self.wait_for_response()
+
     def terminate(self):
         self.terminate_comm_handle()
         self.terminate_video_response()
@@ -77,19 +84,20 @@ class Tello():
         while self._comm_handle_running:
             try:
                 if not self.response_received:
-                    resp_msg, client_addr = self.comm_sock.recvfrom(1024)  # read 1024 bytes from UDP socket
+                    resp_msg = self.comm_sock.recvfrom(1024)[0]  # read 1024 bytes from UDP socket
                     self.response_received = True
                     print("Tello command response: {}".format(resp_msg.decode(encoding="utf-8")))
                 else:
-                    time.sleep(1)
                     # Send empty "command" every 5 seconds to keep Tello in SDK mode
                     if (datetime.datetime.now() - start_time).total_seconds() >= 5:
                         self.send_command("command")
                         start_time = datetime.datetime.now()
                     else:
                         if self.face_rect is not None:
-                            # Calculate and send control command
-                            self.move_horizontally()
+                            # Calculate and send control commands
+                            self.handle_commands()
+                        else:
+                            time.sleep(1)
             except Exception as e:
                 print(e)
 
@@ -127,30 +135,91 @@ class Tello():
         while not self.response_received:
             continue
 
-    def move_horizontally(self):
-        """
-        image width = 480 px
-        """
-        threshold = 30
-
-        frame_height, frame_width, _ = self.frame.shape
+    def calculate_x_command(self):
+        frame_width = self.frame.shape[1]
         frame_center_x = frame_width // 2
 
-        face_x, face_y, face_width, face_height = self.face_rect
+        face_x = self.face_rect[0]
+        face_width = self.face_rect[2]
         face_center_x = face_x + face_width // 2
 
-        center_diff = frame_center_x - face_center_x
+        x_center_diff = frame_center_x - face_center_x
 
-        print("frame_center_x: {}, face_center_x: {}, center_diff: {}".format(frame_center_x, face_center_x, center_diff))
+        print("frame_center_x: {}, face_center_x: {}, x_center_diff: {}".format(frame_center_x, face_center_x, x_center_diff))
 
-        if abs(center_diff) >= threshold:
-            turn_degrees = self.fl_controller.calculate_x(abs(center_diff))
-            if center_diff > 0:
+        if abs(x_center_diff) > self.x_threshold:
+            turn_degrees = self.fl_controller.calculate_x(abs(x_center_diff))
+            if x_center_diff > 0:
                 direction = "ccw"
             else:
                 direction = "cw"
-            self.send_command("{} {}".format(direction, turn_degrees))
-        self.face_rect = None
+            self.command_queue.append("{} {}".format(direction, turn_degrees))
+
+    def calculate_z_command(self):
+        frame_height = self.frame.shape[0]
+        frame_center_z = frame_height // 2
+
+        face_z = self.face_rect[1]
+        face_height = self.face_rect[3]
+        face_center_z = face_z + face_height // 2
+
+        z_center_diff = frame_center_z - face_center_z
+
+        print("frame_center_z: {}, face_center_z: {}, z_center_diff: {}".format(frame_center_z, face_center_z, z_center_diff))
+
+        if abs(z_center_diff) > self.z_threshold:
+            horizontal_distance = self.fl_controller.calculate_z(abs(z_center_diff))
+            if z_center_diff > 0:
+                direction = "up"
+            else:
+                direction = "down"
+            self.command_queue.append("{} {}".format(direction, horizontal_distance))
+
+    def calculate_y_command(self):
+        face_height = self.face_rect[3]
+
+        current_distance = 65 * 80 // face_height
+
+        if current_distance >= 80:
+            vertical_distance = current_distance - 80
+            direction = "forward"
+        else:
+            vertical_distance = 80 - current_distance
+            direction = "back"
+        if vertical_distance > 20:
+            self.command_queue.append("{} {}".format(direction, vertical_distance))
+
+        print("target_height: {}, face_height: {}, current_distance: {}".format(50, face_height, current_distance))
+
+
+        # if self.target_face_area >= face_area:
+        #     y_area_diff = self.target_face_area // face_area
+        #     direction = "forward"
+        # else:
+        #     y_area_diff = face_area // self.target_face_area
+        #     direction = "back"
+
+        # if y_area_diff > self.y_threshold:
+        #     vertical_distance = self.fl_controller.calculate_y(y_area_diff)
+        #     self.command_queue.append("{} {}".format(direction, vertical_distance))
+
+        # print("self.target_face_area: {}, face_area: {}, y_area_diff: {}".format(self.target_face_area, face_area, y_area_diff))
+
+    def handle_commands(self):
+        if self.command_queue_is_empty():
+            self.calculate_x_command()
+            self.calculate_z_command()
+            self.calculate_y_command()
+        else:
+            self.execute_command()
+
+    def command_queue_is_empty(self):
+        return len(self.command_queue) == 0
+
+    def execute_command(self):
+        comm = self.command_queue.pop(0)
+        self.send_command(comm)
+
 
 
 if __name__ == "__main__":

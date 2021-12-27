@@ -24,6 +24,7 @@ class HaarCascadeFaceDetector():
             return img, faces[0]
 
 if __name__ == "__main__":
+    # For testing purposes
     video_capture = cv2.VideoCapture(0)
     haar_cascade_face_detector = HaarCascadeFaceDetector()
 
