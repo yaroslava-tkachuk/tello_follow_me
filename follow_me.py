@@ -68,18 +68,19 @@ class Tello():
         self.comm_handle_thread.start()
 
         self.send_command("command")
-        self.wait_for_response()
+        # self.wait_for_response()
+        time.sleep(1)
 
         self.send_command("takeoff")
-        self.wait_for_response()
-        time.sleep(2)
+        # self.wait_for_response()
+        time.sleep(7)
 
         self.send_command("up 60")
-        self.wait_for_response()
-        time.sleep(1)
+        # self.wait_for_response()
+        time.sleep(2)
         
         self.send_command("streamon")
-        self.wait_for_response()
+        # self.wait_for_response()
         time.sleep(1)
 
         self._video_cap = cv2.VideoCapture("udp://@{}:{}".format(self.mac_ip, self.video_receive_port))
