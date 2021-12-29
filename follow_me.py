@@ -61,26 +61,28 @@ class Tello():
         # Threads
         self._comm_handle_running = True
         self._video_receive_running = True
+        self._comm_handle_dead = False
+        self._video_receive_dead = False
         self._response_received = False
         
         # Start command handligh thread.
         self._comm_handle_thread = threading.Thread(target=self.comm_handle)
         self.comm_handle_thread.start()
 
+        # Tello sends response when command is received, not when it is
+        # completed. For this reason time.sleep() is needed to wait for actual
+        # command execution before sending next command.
+
         self.send_command("command")
-        # self.wait_for_response()
         time.sleep(1)
 
         self.send_command("takeoff")
-        # self.wait_for_response()
         time.sleep(7)
 
         self.send_command("up 60")
-        # self.wait_for_response()
         time.sleep(2)
         
         self.send_command("streamon")
-        # self.wait_for_response()
         time.sleep(1)
 
         self._video_cap = cv2.VideoCapture("udp://@{}:{}".format(self.mac_ip, self.video_receive_port))
@@ -179,6 +181,14 @@ class Tello():
         return self._video_receive_running
 
     @property
+    def comm_handle_dead(self):
+        return self._comm_handle_dead
+
+    @property
+    def video_receive_dead(self):
+        return self._video_receive_dead
+
+    @property
     def response_received(self):
         return self._response_received
 
@@ -217,6 +227,14 @@ class Tello():
     @video_receive_running.setter
     def video_receive_running(self, new_video_receive_running):
         self._video_receive_running = new_video_receive_running
+
+    @comm_handle_dead.setter
+    def comm_handle_dead(self, new_comm_handle_dead):
+        self._comm_handle_dead = new_comm_handle_dead
+
+    @video_receive_dead.setter
+    def video_receive_dead(self, new_video_receive_dead):
+        self._video_receive_dead = new_video_receive_dead
 
     @response_received.setter
     def response_received(self, new_response_received):
@@ -259,6 +277,7 @@ class Tello():
                             time.sleep(1)
             except Exception as e:
                 print(e)
+        self.comm_handle_dead = True
 
     def receive_response(self):
 
@@ -281,15 +300,6 @@ class Tello():
         self.response_received = False
 
         print("Sent command to Tello: {}".format(comm))
-
-    def wait_for_response(self):
-
-        """Method for waiting for response from Tello after sending command.
-        
-        Used only in __init__ method."""
-
-        while not self.response_received:
-            continue
 
     def handle_commands(self):
 
@@ -449,6 +459,7 @@ class Tello():
                         self.frame = frame
             except Exception as e:
                 print(e)
+        self.video_receive_dead = True
 
     def show_video_frame(self):
 
@@ -474,6 +485,7 @@ class Tello():
 
         print("Terminating Tello.")
 
+        self.send_command("land")
         self.terminate_comm_handle()
         self.terminate_video_response()
 
@@ -481,21 +493,27 @@ class Tello():
 
         """Method for terminating Tello command handling thread."""
 
-        print("Terminating Tello command handligh thread.")
+        print("Terminating Tello command thread.")
 
-        self._comm_handle_running = False
+        self.comm_handle_running = False
         self.comm_sock.close()
+        # Wait for thread to stop working.
+        while not self.comm_handle_dead:
+            time.sleep(1)
         self.comm_handle_thread.join()
 
     def terminate_video_response(self):
 
-        """Method for terminating Tello video stream thread."""
+        """Method for terminating Tello video thread."""
 
         print("Terminating Tello video stream handligh thread.")
 
-        self._video_receive_running = False
+        self.video_receive_running = False
         self.video_cap.release()
         cv2.destroyAllWindows()
+        # Wait for thread to stop working.
+        while not self.video_receive_dead:
+            time.sleep(1)
         self.video_receive_thread.join()
 
     #--------------------------------------------------------------------------
@@ -505,17 +523,3 @@ class Tello():
     #--------------------------------------------------------------------------
     # End Class Methods
     #--------------------------------------------------------------------------
-
-if __name__ == "__main__":
-
-    # Initialize Tello and start threads for command sending/receiving response
-    # and video stream receiving.
-    tello = Tello()
-
-    while 1:
-        try:
-            # Stream video from Tello.
-            # Due to OpenCV implementation must be done in the main thread.
-            tello.show_video_frame()
-        except Exception:
-            tello.terminate()
