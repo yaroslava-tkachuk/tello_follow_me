@@ -9,7 +9,7 @@ from haar_cascade_face_detector import HaarCascadeFaceDetector
 
 class Tello():
 
-    """Class that implements follow me flight mode of the Tello drone.
+    """Class that implements follow-me flight mode of the Tello drone.
     
     Responsible for:
         - sending commands/receiving responces from Tello;
@@ -43,6 +43,10 @@ class Tello():
         self._haar_face_detector = HaarCascadeFaceDetector()
         self._frame = None
         self._face_rect = None
+
+        # Logging
+        self._info_tag = "TELLO_INFO: "
+        self._err_tag = "TELLO_ERR: "
 
         # Movement control
         # X axis
@@ -139,6 +143,14 @@ class Tello():
     @property
     def face_rect(self):
         return self._face_rect
+
+    @property
+    def info_tag(self):
+        return self._info_tag
+
+    @property
+    def err_tag(self):
+        return self._err_tag
 
     @property
     def x_threshold(self):
@@ -276,7 +288,8 @@ class Tello():
                         else:
                             time.sleep(1)
             except Exception as e:
-                print(e)
+                # Send log.
+                self.log_message(self.err_tag, str(e))
         self.comm_handle_dead = True
 
     def receive_response(self):
@@ -287,7 +300,9 @@ class Tello():
         resp_msg = self.comm_sock.recvfrom(1024)[0]
         self.response_received = True
 
-        print("Tello command response: {}".format(resp_msg.decode(encoding="utf-8")))
+        # Send log.
+        msg = "Command response: {}".format(resp_msg.decode(encoding="utf-8"))
+        self.log_message(self.info_tag, msg)
 
     def send_command(self, comm):
 
@@ -299,7 +314,9 @@ class Tello():
         self.comm_sock.sendto(comm, (self.tello_ip, self.comm_send_port))
         self.response_received = False
 
-        print("Sent command to Tello: {}".format(comm))
+        # Send log.
+        msg = "Sending command: {}".format(comm)
+        self.log_message(self.info_tag, msg)
 
     def handle_commands(self):
 
@@ -337,8 +354,10 @@ class Tello():
         # turn_degrees     - x_center_diff
         turn_degrees = abs(x_center_diff*self.max_turn_degrees//frame_center_x)
 
-        print("frame_center_x: {}, face_center_x: {}, x_center_diff: {}"
-            .format(frame_center_x, face_center_x, x_center_diff))
+        # Send log.
+        msg = "Frame center X: {}, Face center X: {}, X diff: {}"
+        msg = msg.format(frame_center_x, face_center_x, x_center_diff)
+        self.log_message(self.info_tag, msg)
 
         # If turn_degrees axceed threshold, add a new command to the command
         # queue.
@@ -372,8 +391,10 @@ class Tello():
         # horizontal_distance - z_center_diff
         horizontal_distance = abs(z_center_diff*self.max_z_distance//frame_center_z)
 
-        print("frame_center_z: {}, face_center_z: {}, z_center_diff: {}"
-            .format(frame_center_z, face_center_z, z_center_diff))
+        # Send log.
+        msg = "Frame center Z: {}, Face center Z: {}, Z diff: {}"
+        msg = msg.format(frame_center_z, face_center_z, z_center_diff)
+        self.log_message(self.info_tag, msg)
 
         # If horizontal_distance axceed threshold, add a new command to the
         # command queue.
@@ -413,8 +434,10 @@ class Tello():
                 direction = "back"
             self.command_queue.append("{} {}".format(direction, vertical_distance))
 
-        print("target_height: {}, face_height: {}, current_distance: {}"
-            .format(50, face_height, current_distance))
+        # Send log.
+        msg = "Target height: {}, Face height: {}, current distance: {}"
+        msg = msg.format(self.target_face_height, face_height, current_distance)
+        self.log_message(self.info_tag, msg)
 
     def execute_command(self):
 
@@ -458,7 +481,8 @@ class Tello():
                     else:
                         self.frame = frame
             except Exception as e:
-                print(e)
+                # Send log.
+                self.log_message(self.err_tag, str(e))
         self.video_receive_dead = True
 
     def show_video_frame(self):
@@ -483,7 +507,9 @@ class Tello():
 
         """Method for terminating Tello video stream and command handlig."""
 
-        print("Terminating Tello.")
+        # Send log.
+        msg = "Terminating Tello."
+        self.log_message(self.info_tag, msg)
 
         self.send_command("land")
         self.terminate_comm_handle()
@@ -491,9 +517,11 @@ class Tello():
 
     def terminate_comm_handle(self):
 
-        """Method for terminating Tello command handling thread."""
+        """Method for terminating Tello command thread."""
 
-        print("Terminating Tello command thread.")
+        # Send log.
+        msg = "Terminating Tello command thread."
+        self.log_message(self.info_tag, msg)
 
         self.comm_handle_running = False
         self.comm_sock.close()
@@ -506,7 +534,9 @@ class Tello():
 
         """Method for terminating Tello video thread."""
 
-        print("Terminating Tello video stream handligh thread.")
+        # Send log.
+        msg = "Terminating Tello video stream thread."
+        self.log_message(self.info_tag, msg)
 
         self.video_receive_running = False
         self.video_cap.release()
@@ -519,6 +549,16 @@ class Tello():
     #--------------------------------------------------------------------------
     # End Thread Terminators
     #--------------------------------------------------------------------------
+
+    def log_message(self, tag, msg):
+        
+        """Method for logging messages.
+        
+        IN:
+            tag - str - message tag (TELLO_INFO or TELLO_ERR)
+            msg - str - message to be logged."""
+
+        print(tag + msg)
 
     #--------------------------------------------------------------------------
     # End Class Methods

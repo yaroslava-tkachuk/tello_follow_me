@@ -3,7 +3,7 @@ import threading
 from follow_me import Tello
 
 
-class TelloFollowMeCommander():
+class TelloFollowMeController():
 
     """Class for running main Tello follow-me mode program.
     
@@ -18,6 +18,12 @@ class TelloFollowMeCommander():
 
     def __init__(self):
         self._tello = Tello()
+
+        # Logging
+        self._info_tag = "TELLO_COMMANDER_INFO: "
+        self._err_tag = "TELLO_COMMANDER_ERR: "
+
+        # Threads
         self._running = True
         self._input_thread_running = True
         # Start reading input from terminal.
@@ -35,6 +41,14 @@ class TelloFollowMeCommander():
     @property
     def tello(self):
         return self._tello
+    
+    @property
+    def info_tag(self):
+        return self._info_tag
+
+    @property
+    def err_tag(self):
+        return self._err_tag
 
     @property
     def running(self):
@@ -95,9 +109,13 @@ class TelloFollowMeCommander():
             try:
                 self.tello.show_video_frame()
             except Exception as e:
-                print(e)
+                # Log message.
+                self.log_message(self.err_tag, str(e))
         
-        print("Ending program. Tello going to rest. See ya! :)")
+        # Log message.
+        msg = "Ending program. Tello going to rest. See ya! :)"
+        self.log_message(self.info_tag, msg)
+
         # Terminate all threads.
         self.terminate()
 
@@ -116,12 +134,17 @@ class TelloFollowMeCommander():
     # End Terminators
     #--------------------------------------------------------------------------
 
+    def log_message(self, tag, msg):
+        
+        """Method for logging messages.
+        
+        IN:
+            tag - str - message tag (TELLO_COMMANDER_INFO or
+                TELLO_COMMANDER_ERR)
+            msg - str - message to be logged."""
+
+        print(tag + msg)
+
     #--------------------------------------------------------------------------
     # End Class Methods
     #--------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-
-    tello_follow_me_commander = TelloFollowMeCommander()
-    tello_follow_me_commander.run()

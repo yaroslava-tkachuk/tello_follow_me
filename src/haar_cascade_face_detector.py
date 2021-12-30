@@ -13,8 +13,8 @@ class HaarCascadeFaceDetector():
 
     def __init__(self):
         # Load configuration files.
-        self._frontal_config = "haarcascade_frontalface_alt2.xml"
-        self._profile_config = "haarcascade_profileface.xml"
+        self._frontal_config = "../data/haarcascade_frontalface_alt2.xml"
+        self._profile_config = "../data/haarcascade_profileface.xml"
         self._frontal_face_detector = cv2.CascadeClassifier(self.frontal_config)
         self._profile_face_detector = cv2.CascadeClassifier(self.profile_config)
 
