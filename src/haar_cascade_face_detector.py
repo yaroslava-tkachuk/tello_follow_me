@@ -12,6 +12,9 @@ class HaarCascadeFaceDetector():
     #--------------------------------------------------------------------------
 
     def __init__(self):
+        # Colors.
+        self._blue = (255, 0, 0)
+        self._red = (0, 0, 255)
         # Load configuration files.
         self._frontal_config = "../data/haarcascade_frontalface_alt2.xml"
         self._profile_config = "../data/haarcascade_profileface.xml"
@@ -25,6 +28,14 @@ class HaarCascadeFaceDetector():
     #--------------------------------------------------------------------------
     # Getters
     #--------------------------------------------------------------------------
+
+    @property
+    def blue(self):
+        return self._blue
+    
+    @property
+    def red(self):
+        return self._red
 
     @property
     def frontal_config(self):
@@ -79,16 +90,45 @@ class HaarCascadeFaceDetector():
         # If no frontal face was detected, try detecting profile face.
         if len(faces) == 0:
             faces = self.profile_face_detector.detectMultiScale(img_gray, 1.3, 5)
+        
         # If no faces were detected, return None.
         if len(faces) == 0:
             return
-        else:
-            x, y, width, height = faces[0]
-            # Draw rectangle on the image
-            img = cv2.rectangle(img, (x, y),(x+width, y+height), (255, 0, 0), 2)
+        
+        # Draw face detection results on the image.
+        img = self.draw_face_roi(img, faces[0])
 
-            # Return image and first detected face's bounding box.
-            return img, faces[0]
+        # Return image and first detected face's bounding box.
+        return img, faces[0]
+
+    def draw_face_roi(self, img, face):
+
+        """Draws detected face's ROI.
+
+        Draws rectangular face frame and its central point - blue. Draws
+        centrral point of the image frame - red. 
+        
+        IN:
+            img - numpy.ndarray - image to be analyzed.
+            face - numpy.ndarray - [top_left_x, top_left_y, width,
+                height] of the detected image bounding box.
+        OUT:
+            img - numpy.ndarray - image with ROI.
+        """
+
+        x, y, width, height = face
+        # Draw rectangle on the image.
+        img = cv2.rectangle(img, (x, y), (x+width, y+height), self.blue, 2)
+        # Draw central point of the recognised face.
+        img = cv2.circle(img, (x+width//2, y+height//2), radius=2,
+            color=self.blue, thickness=-1)
+        
+        # Draw central point of the image frame.
+        img_height, img_width = img.shape[0], img.shape[1]
+        img = cv2.circle(img, (img_width//2, img_height//2), radius=2,
+            color=self.red, thickness=-1)
+
+        return img
 
     #--------------------------------------------------------------------------
     # End Class Methods

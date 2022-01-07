@@ -490,7 +490,7 @@ class Tello():
         """Method for displaying Tello video stream using OpenCV library."""
 
         if self.frame is not None:
-            cv2.imshow("Tello Video Stream", self.frame)
+            cv2.imshow("Tello Client", self.frame)
             cv2.waitKey(1)
         else:
             time.sleep(1)
