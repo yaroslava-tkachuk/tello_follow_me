@@ -385,7 +385,7 @@ class Tello():
         face_center_z = face_z + face_height // 2
 
         # Find distance from frame's center to face's bounding box center.
-        z_center_diff = frame_center_z - face_center_z
+        z_center_diff =  face_center_z - frame_center_z
         # Calculate up/down movement distance from proportion:
         # max_z_distance      - frame_center_z 
         # horizontal_distance - z_center_diff
@@ -400,9 +400,9 @@ class Tello():
         # command queue.
         if horizontal_distance > self.z_threshold:
             if z_center_diff > 0:
-                direction = "up"
-            else:
                 direction = "down"
+            else:
+                direction = "up"
             self.command_queue.append("{} {}".format(direction, horizontal_distance))
 
     def calculate_y_command(self):
@@ -491,6 +491,7 @@ class Tello():
 
         if self.frame is not None:
             cv2.imshow("Tello Client", self.frame)
+            cv2.setWindowProperty("Tello Client", cv2.WND_PROP_TOPMOST, 1)
             cv2.waitKey(1)
         else:
             time.sleep(1)
