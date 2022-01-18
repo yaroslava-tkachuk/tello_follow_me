@@ -8,7 +8,7 @@ Functionalities:
 Tello "follow-me" flight can be view on [YouTube](https://www.youtube.com/watch?v=JM1rvrMFqlA).
 
 **System Diagram**
-![System Diagram](/documentation_tello_system_diagram.png)
+![System Diagram](/documentation/tello_system_diagram.png)
 
 **Tello Client Flow**
-![System Diagram](/tello_client_flow.png)
+![System Diagram](/documentation/tello_client_flow.png)
