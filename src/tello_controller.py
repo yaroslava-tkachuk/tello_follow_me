@@ -1,3 +1,5 @@
+"""Copyright 2022 Yaroslava Tkachuk. All rights reserved."""
+
 import threading
 
 from follow_me import Tello

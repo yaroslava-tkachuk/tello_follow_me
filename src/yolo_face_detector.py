@@ -1,3 +1,7 @@
+"""Copyright 2022 Yaroslava Tkachuk. All rights reserved."""
+
+"""[Work in progress]"""
+
 import cv2
 import numpy as np
 

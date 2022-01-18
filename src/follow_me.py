@@ -1,3 +1,5 @@
+"""Copyright 2022 Yaroslava Tkachuk. All rights reserved."""
+
 import cv2
 import socket
 import threading
