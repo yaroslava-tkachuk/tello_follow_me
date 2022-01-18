@@ -1,3 +1,5 @@
+"""Copyright 2022 Yaroslava Tkachuk. All rights reserved."""
+
 class FuzzyLogicController:
 
     """Class for calculating command values using Fuzzy Logic algorithm.
