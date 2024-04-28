@@ -5,7 +5,7 @@ Functionalities:
 - Real-time face detection in video stream images using Haar Cascade classifier from OpenCV library.
 - Autonomous "follow-me" flight mode of the UAV.
 
-Tello "follow-me" flight can be view on [YouTube](https://www.youtube.com/watch?v=JM1rvrMFqlA).
+Tello "follow-me" flight can be viewed on [YouTube](https://www.youtube.com/watch?v=JM1rvrMFqlA).
 
 **System Diagram**
 ![System Diagram](/documentation/tello_system_diagram.png)
